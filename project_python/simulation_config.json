@@ -1,0 +1,29 @@
+{
+  "simulation": {
+    "display_width": 1000, 
+    "display_height": 600,
+    "plane_width": 600,
+    "plane_height": 600,
+    "num_of_predators": 10,
+    "num_of_prey": 10,
+    "show_images": false
+  },
+  "animal": {
+    "predator": {
+      "image_path": "./assets/wolf.png",
+      "image_width": 78,
+      "image_height": 48,
+      "color": "red",
+      "width": 10,
+      "height": 10
+    },
+    "prey": {
+      "image_path": "./assets/sheep.png",
+      "image_width": 54,
+      "image_height": 43,
+      "color": "darkblue",
+      "width": 10,
+      "height": 10
+    }
+  }
+}
