@@ -1,10 +1,11 @@
 import pygame
 import random
 import matplotlib
-from sqlalchemy import all_
+from regex import P
 matplotlib.use('module://pygame_matplotlib.backend_pygame')
 import matplotlib.pyplot as plt
 import json
+from scipy.spatial import KDTree
 
 
 from Plane.plane import Plane
@@ -26,16 +27,16 @@ class Engine():
     
     self.plane = Plane(height, width)
     self.btn_image = 'bomb.png'
-    # self.button = pygame.image.load(f'assets/{self.btn_image}').convert_alpha()
-    # self.button = pygame.transform.scale(self.button, (50, 75))
 
     self.window = pygame.display.set_mode((self.width, self.height))
-    # self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
     self.screen = pygame.Surface((self.screen_width, self.screen_height))
-    # self.background = pygame.Surface((0, 0))
     self.clock = pygame.time.Clock()
     self.running = False
     self.paused = False
+
+    # self.kd_tree = KDTree()
+    # self.kd_tree.query_pairs(r=10)
+    # self.kd_tree.sparse_distance_matrix(self.kd_tree, max_distance=10)
 
 
   def run(self):
@@ -47,19 +48,15 @@ class Engine():
 
     show_images = config['simulation']['show_images']
 
-    self.button = pygame.image.load(f'assets/{self.btn_image}').convert_alpha()
-    self.button = pygame.transform.scale(self.button, (50, 75))
-
     fig, ax = plt.subplots()  # Create a figure containing a single axes.
     ax.plot([1, 2, 3, 4], [1, 4, 2, 3])  # Plot some data on the axes.
     # plt.show()
 
     # predator = Predator((10, 4), 0)
     prey_config = config['animal']['prey']
-    prey_width = prey_config['image_width'] if show_images else prey_config['width']
-    prey_height = prey_config['image_height'] if show_images else prey_config['height']
-    prey = Prey((100, 100), 0, prey_config, show_images)
-    # all_sprites = pygame.sprite.Group([predator, prey])
+    predator_config = config['animal']['predator']
+
+    my_prey = Prey((100, 100), 0, prey_config, show_images)
     all_sprites = self.generate_population(self.predators_num, self.prey_num, config)
 
     while self.running:
@@ -75,28 +72,42 @@ class Engine():
         continue
 
       # self.predator_control(predator)
-      self.prey_control(prey)
+      self.prey_control(my_prey)
       
       self.window.fill("black")
       self.window.blit(self.screen, (0, 0))
       self.screen.fill('#EEC8CD')
 
-      self.screen.blit(self.button, (280, 280))
-      
-      self.screen.blit(prey.image, prey.pos)
-      if abs(prey.pos[0]-280) <= 30 and abs(prey.pos[1]-280) <= 30 and self.btn_image != 'explosion.png':
-        self.btn_image = 'explosion.png'
-        count = True
-        self.button = pygame.image.load(f'assets/{self.btn_image}').convert_alpha()
-        self.button = pygame.transform.scale(self.button, (61, 61))
-        all_sprites = pygame.sprite.Group(filter(lambda x: type(x) != Predator, all_sprites))
+      self.screen.blit(my_prey.image, my_prey.pos)
 
       for entity in all_sprites:
         self.move_animal(entity)
         self.screen.blit(entity.image, entity.pos)
-        if pygame.sprite.groupcollide(all_sprites, all_sprites, False, False):
-          # print('colision')
-          pass
+
+      sprites = list(all_sprites)
+      self.kd_tree = KDTree([a.pos for a in sprites])
+      
+      pairs = self.kd_tree.query_pairs(r=10)
+      pairs = list(pairs)
+
+      for pair in pairs:
+        a1, a2 = sprites[pair[0]], sprites[pair[1]]
+        min_energy = config["simulation"]["procreate_energy"]
+        if type(a1) is type(a2) and a1.hunger > min_energy and a2.hunger > min_energy:
+          if isinstance(a1, Prey):
+            all_sprites.add(Prey(a1.pos, min_energy - 10, prey_config, show_images))
+          else:
+            all_sprites.add(Predator(a1.pos, min_energy - 10, predator_config, show_images))
+          a1.hunger /= 2
+          a2.hunger /= 2
+        elif type(a1) is not type(a2):
+          predator = a1 if isinstance(a1, Predator) else a2
+          prey = a1 if isinstance(a1, Prey) else a2
+
+          if predator.hunger < 100:
+            predator.eat(config["simulation"]["energy_gain"])
+            all_sprites.remove(prey)
+
       pygame.display.update()
       self.clock.tick(240)
 
@@ -148,23 +159,25 @@ class Engine():
     show_images = config['simulation']['show_images']
 
     prey_config = config['animal']['prey']
-    prey_width = prey_config['image_width'] if show_images else prey_config['width']
-    prey_height = prey_config['image_height'] if show_images else prey_config['height']
-
     predator_config = config['animal']['predator']
-    predator_width = predator_config['image_width'] if show_images else predator_config['width']
-    predator_height = predator_config['image_height'] if show_images else predator_config['height']
 
     population = pygame.sprite.Group()
+    # self.prey_population = pygame.sprite.Group()
+    # self.predator_population = pygame.sprite.Group()
+
     for _ in range(prey):
       x, y = random.randint(0, self.screen_width-PREY_SIZE[0]),  random.randint(0, self.screen_height-PREY_SIZE[1])
-      population.add(Prey((x, y), 10, prey_config, show_images))
+      population.add(Prey((x, y), config["simulation"]["initial_energy"], prey_config, show_images))
+      # self.prey_population.add(Prey((x, y), 10, prey_config, show_images))
     for _ in range(predators):
       x, y = random.randint(0, self.screen_width-PREDATOR_SIZE[0]),  random.randint(0, self.screen_height-PREDATOR_SIZE[1])
-      population.add(Predator((x, y), 10, predator_config, show_images))
+      population.add(Predator((x, y), config["simulation"]["initial_energy"], predator_config, show_images))
+      # self.predator_population.add(Predator((x, y), 10, predator_config, show_images))
+
     return population
   
 
   def check_position_validity(self, pos: tuple[int, int], obj_w, obj_h, max_w, max_h):
     return pos[0] <= max_w - obj_w and pos[0] >= 0 and pos[1] <= max_h - obj_h and pos[1] >= 0
+  
   

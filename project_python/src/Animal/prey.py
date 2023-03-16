@@ -5,10 +5,10 @@ class Prey(Animal):
     def __init__(self, pos: tuple[int, int], hunger: int, prey_config, show_image: bool=False):
         super().__init__(pos, hunger)
 
-        self.sprite_width = int(prey_config['image_width']) if show_image else int(prey_config['width'])
-        self.sprite_height = int(prey_config['image_height']) if show_image else int(prey_config['height'])
+        self.sprite_width = prey_config['image_width']
+        self.sprite_height = int(self.sprite_width * prey_config['image_ratio']) if show_image else prey_config['image_width']
         self.rect = pygame.Rect(pos[0], pos[1], self.sprite_width, self.sprite_height)
-        
+
         if show_image:
             # --- IMAGE ---
             self.image = pygame.image.load('assets/sheep.png').convert_alpha()
