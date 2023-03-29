@@ -2,6 +2,7 @@ from __future__ import annotations
 import pygame
 import random
 from enum import Enum
+from SimulationObject.simulation_object import SimulationObject
 
 class Direction(Enum):
     UP = (0, -1)
@@ -11,15 +12,15 @@ class Direction(Enum):
     IDLE = (0, 0)
 
 
-class Animal(pygame.sprite.Sprite):
-    def __init__(self, pos: tuple[int, int], hunger: int):
-        pygame.sprite.Sprite.__init__(self)
+class Animal(SimulationObject):
+    def __init__(self, pos: tuple[int, int], energy: int):
+        super().__init__(pos)
         self.sprite_height = 32
         self.sprite_width = 32
         # self.rect = pygame.Rect(pos[0], pos[1], self.sprite_width, self.sprite_height)
 
         self.pos = pos
-        self.hunger = hunger
+        self.energy = energy
 
 
     def generate_move_constrained(self, max_w, max_h):
@@ -40,7 +41,7 @@ class Animal(pygame.sprite.Sprite):
     def move(self, new_pos: tuple[int, int]):
         self.pos = new_pos
         # self.rect = pygame.Rect(*self.pos, self.sprite_width, self.sprite_height)
-        self.hunger -= 1
+        self.energy -= 0.1
 
 
     def get_new_position(self):
@@ -49,7 +50,7 @@ class Animal(pygame.sprite.Sprite):
 
 
     def eat(self, energy_consumed):
-        self.hunger += energy_consumed
+        self.energy += energy_consumed
 
 
     def get_width(self):
@@ -61,6 +62,6 @@ class Animal(pygame.sprite.Sprite):
 
 
     # def procreate(self, other: Animal):
-    #     offspring_hunger = (self.hunger + other.hunger)//2
+    #     offspring_energy = (self.energy + other.energy)//2
     #     if isinstance(other, Predator):
     #         print('is predator')

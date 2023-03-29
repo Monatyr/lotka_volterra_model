@@ -1,5 +1,5 @@
-from Animal.predator import Predator
-from Animal.prey import Prey
+from SimulationObject.Animal.predator import Predator
+from SimulationObject.Animal.prey import Prey
 
 class Plane():
     def __init__(self, height: int, width: int, predators: list[Predator]=[], prey: list[Prey]=[]):

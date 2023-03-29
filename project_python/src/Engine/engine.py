@@ -1,17 +1,16 @@
 import pygame
 import random
 import matplotlib
-from regex import P
 matplotlib.use('module://pygame_matplotlib.backend_pygame')
 import matplotlib.pyplot as plt
 import json
 from scipy.spatial import KDTree
 
-
 from Plane.plane import Plane
-from Animal.predator import Predator
-from Animal.animal import Direction, Animal
-from Animal.prey import Prey
+from SimulationObject.Animal.animal import Direction, Animal
+from SimulationObject.Animal.predator import Predator
+from SimulationObject.Animal.prey import Prey
+
 
 PREDATOR_SIZE = (78, 48)
 PREY_SIZE = (54, 43)
@@ -24,9 +23,16 @@ class Engine():
     self.screen_height = screen_height
     self.predators_num = predators_num
     self.prey_num = prey_num
+    self.all_sprites = []
+
+    with open('simulation_config.json') as file:
+      self.config = json.load(file)
+      # self.bg = pygame.image.load("assets/grass_bg.webp")
+
+
+    self.show_images = self.config['simulation']['show_images']
     
     self.plane = Plane(height, width)
-    self.btn_image = 'bomb.png'
 
     self.window = pygame.display.set_mode((self.width, self.height))
     self.screen = pygame.Surface((self.screen_width, self.screen_height))
@@ -34,79 +40,46 @@ class Engine():
     self.running = False
     self.paused = False
 
-    # self.kd_tree = KDTree()
-    # self.kd_tree.query_pairs(r=10)
-    # self.kd_tree.sparse_distance_matrix(self.kd_tree, max_distance=10)
-
 
   def run(self):
     pygame.init()
     self.running = True
 
-    with open('simulation_config.json') as file:
-      config = json.load(file)
-
-    show_images = config['simulation']['show_images']
-
     fig, ax = plt.subplots()  # Create a figure containing a single axes.
     ax.plot([1, 2, 3, 4], [1, 4, 2, 3])  # Plot some data on the axes.
     # plt.show()
 
-    # predator = Predator((10, 4), 0)
-    prey_config = config['animal']['prey']
-    predator_config = config['animal']['predator']
+    # prey_config = self.config['animal']['prey']
+    # my_prey = Prey((100, 100), 0, prey_config, self.show_images)
 
-    my_prey = Prey((100, 100), 0, prey_config, show_images)
-    all_sprites = self.generate_population(self.predators_num, self.prey_num, config)
+    self.all_sprites = self.generate_population()
 
     while self.running:
+      if not self.all_sprites:
+        self.paused = True
 
-      for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN:
-          if event.key == pygame.K_ESCAPE:
-            self.running = False
-          if event.key == pygame.K_SPACE:
-            self.paused = not self.paused
-
+      self.handle_keys()      
       if self.paused:
         continue
 
-      # self.predator_control(predator)
-      self.prey_control(my_prey)
+      self.draw_background()
+
+      # self.prey_control(my_prey)
+      # self.screen.blit(my_prey.image, my_prey.pos)
       
-      self.window.fill("black")
-      self.window.blit(self.screen, (0, 0))
-      self.screen.fill('#EEC8CD')
+      self.run_animal_turn()
 
-      self.screen.blit(my_prey.image, my_prey.pos)
+      if not self.all_sprites:
+        self.paused = True
+        continue
 
-      for entity in all_sprites:
-        self.move_animal(entity)
-        self.screen.blit(entity.image, entity.pos)
-
-      sprites = list(all_sprites)
+      sprites = list(self.all_sprites)
       self.kd_tree = KDTree([a.pos for a in sprites])
       
       pairs = self.kd_tree.query_pairs(r=10)
       pairs = list(pairs)
 
-      for pair in pairs:
-        a1, a2 = sprites[pair[0]], sprites[pair[1]]
-        min_energy = config["simulation"]["procreate_energy"]
-        if type(a1) is type(a2) and a1.hunger > min_energy and a2.hunger > min_energy:
-          if isinstance(a1, Prey):
-            all_sprites.add(Prey(a1.pos, min_energy - 10, prey_config, show_images))
-          else:
-            all_sprites.add(Predator(a1.pos, min_energy - 10, predator_config, show_images))
-          a1.hunger /= 2
-          a2.hunger /= 2
-        elif type(a1) is not type(a2):
-          predator = a1 if isinstance(a1, Predator) else a2
-          prey = a1 if isinstance(a1, Prey) else a2
-
-          if predator.hunger < 100:
-            predator.eat(config["simulation"]["energy_gain"])
-            all_sprites.remove(prey)
+      self.animal_interactions(pairs, sprites)
 
       pygame.display.update()
       self.clock.tick(240)
@@ -155,24 +128,17 @@ class Engine():
       prey.move(new_pos)
 
   
-  def generate_population(self, predators, prey, config):
-    show_images = config['simulation']['show_images']
-
-    prey_config = config['animal']['prey']
-    predator_config = config['animal']['predator']
-
+  def generate_population(self):
+    prey_config = self.config['animal']['prey']
+    predator_config = self.config['animal']['predator']
     population = pygame.sprite.Group()
-    # self.prey_population = pygame.sprite.Group()
-    # self.predator_population = pygame.sprite.Group()
 
-    for _ in range(prey):
+    for _ in range(self.prey_num):
       x, y = random.randint(0, self.screen_width-PREY_SIZE[0]),  random.randint(0, self.screen_height-PREY_SIZE[1])
-      population.add(Prey((x, y), config["simulation"]["initial_energy"], prey_config, show_images))
-      # self.prey_population.add(Prey((x, y), 10, prey_config, show_images))
-    for _ in range(predators):
+      population.add(Prey((x, y), self.config["simulation"]["initial_energy"], prey_config, self.show_images))
+    for _ in range(self.predators_num):
       x, y = random.randint(0, self.screen_width-PREDATOR_SIZE[0]),  random.randint(0, self.screen_height-PREDATOR_SIZE[1])
-      population.add(Predator((x, y), config["simulation"]["initial_energy"], predator_config, show_images))
-      # self.predator_population.add(Predator((x, y), 10, predator_config, show_images))
+      population.add(Predator((x, y), self.config["simulation"]["initial_energy"], predator_config, self.show_images))
 
     return population
   
@@ -180,4 +146,63 @@ class Engine():
   def check_position_validity(self, pos: tuple[int, int], obj_w, obj_h, max_w, max_h):
     return pos[0] <= max_w - obj_w and pos[0] >= 0 and pos[1] <= max_h - obj_h and pos[1] >= 0
   
+
+  def handle_keys(self):
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+          if event.key == pygame.K_ESCAPE:
+            self.running = False
+          if event.key == pygame.K_SPACE:
+            self.paused = not self.paused
+
+  
+  def run_animal_turn(self):
+    '''Make animal move. Cleanup deceased animals'''
+    new_sprites = pygame.sprite.Group()
+    
+    for animal in self.all_sprites:
+        if animal.energy < 0:
+          continue
+
+        new_sprites.add(animal)
+
+        self.move_animal(animal)
+        self.screen.blit(animal.image, animal.pos)
+    
+    self.all_sprites = new_sprites
+  
+
+  def animal_interactions(self, pairs, sprites):
+    '''Reproduction and hunting'''
+    prey_config = self.config['animal']['prey']
+    predator_config = self.config['animal']['predator']
+
+    for pair in pairs:
+      a1, a2 = sprites[pair[0]], sprites[pair[1]]
+      min_energy = self.config["simulation"]["procreate_energy"]
+
+      if type(a1) is type(a2) and a1.energy > min_energy and a2.energy > min_energy:
+        if isinstance(a1, Prey):
+          self.all_sprites.add(Prey(a1.pos, min_energy - 10, prey_config, self.show_images))
+        else:
+          self.all_sprites.add(Predator(a1.pos, min_energy - 10, predator_config, self.show_images))
+        a1.energy -= min_energy//3
+        a2.energy -= min_energy//3
+
+      elif type(a1) is not type(a2):
+        predator = a1 if isinstance(a1, Predator) else a2
+        prey = a1 if isinstance(a1, Prey) else a2
+
+        if predator.energy < 100:
+          predator.eat(self.config["simulation"]["energy_gain"])
+          self.all_sprites.remove(prey)
+
+
+  def draw_background(self):
+    self.window.fill("black")
+    self.window.blit(self.screen, (0, 0))
+    self.screen.fill('#57B669')
+
+  
+
   

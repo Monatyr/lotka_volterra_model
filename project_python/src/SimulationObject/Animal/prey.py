@@ -1,9 +1,9 @@
 import pygame
-from Animal.animal import Animal
+from SimulationObject.Animal.animal import Animal
 
 class Prey(Animal):
-    def __init__(self, pos: tuple[int, int], hunger: int, prey_config, show_image: bool=False):
-        super().__init__(pos, hunger)
+    def __init__(self, pos: tuple[int, int], energy: int, prey_config, show_image: bool=False):
+        super().__init__(pos, energy)
 
         self.sprite_width = prey_config['image_width']
         self.sprite_height = int(self.sprite_width * prey_config['image_ratio']) if show_image else prey_config['image_width']

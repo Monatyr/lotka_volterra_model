@@ -4,10 +4,10 @@
     "display_height": 600,
     "plane_width": 600,
     "plane_height": 600,
-    "num_of_predators": 250,
-    "num_of_prey": 250,
+    "num_of_predators": 50,
+    "num_of_prey": 150,
     "energy_gain": 25,
-    "initial_energy": 100,
+    "initial_energy": 300,
     "procreate_energy": 30,
     "show_images": false
   },
