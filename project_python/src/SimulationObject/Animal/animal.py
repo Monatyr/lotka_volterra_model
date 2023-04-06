@@ -1,8 +1,10 @@
 from __future__ import annotations
-import pygame
 import random
 from enum import Enum
+
+from scipy import rand
 from SimulationObject.simulation_object import SimulationObject
+from abc import ABC, abstractmethod
 
 class Direction(Enum):
     UP = (0, -1)
@@ -12,15 +14,17 @@ class Direction(Enum):
     IDLE = (0, 0)
 
 
-class Animal(SimulationObject):
-    def __init__(self, pos: tuple[int, int], energy: int):
+class Animal(SimulationObject, ABC):
+    def __init__(self, pos: tuple[int, int], energy: int, config, behavior: dict=None, show_image: bool=False):
         super().__init__(pos)
+        self.alive = True
         self.sprite_height = 32
         self.sprite_width = 32
-        # self.rect = pygame.Rect(pos[0], pos[1], self.sprite_width, self.sprite_height)
 
-        self.pos = pos
+        self.config = config
         self.energy = energy
+        self.behavior = behavior
+        self.show_image = show_image
 
 
     def generate_move_constrained(self, max_w, max_h):
@@ -40,7 +44,6 @@ class Animal(SimulationObject):
 
     def move(self, new_pos: tuple[int, int]):
         self.pos = new_pos
-        # self.rect = pygame.Rect(*self.pos, self.sprite_width, self.sprite_height)
         self.energy -= 0.1
 
 
@@ -61,7 +64,34 @@ class Animal(SimulationObject):
         return self.sprite_height
 
 
+    # @abstractmethod
     # def procreate(self, other: Animal):
-    #     offspring_energy = (self.energy + other.energy)//2
-    #     if isinstance(other, Predator):
-    #         print('is predator')
+    #     pass
+
+    def procreate(self, other: Animal):
+        if self.energy < self.config['procreate_energy'] or other.energy < other.config['procreate_energy']:
+            return None
+        
+        self.energy -= self.config['procreate_energy']//2
+        other.energy -= other.config['procreate_energy']//2
+
+        b1, b2 = self.behavior, other.behavior
+        keys = b1.keys()
+        n = len(b1)
+        b_new = {}
+
+        #behavior average from parents
+        for (k1, v1), (k2, v2) in zip(b1.items(), b2.items()):
+            b_new[k1] = (v1 + v2) / 2
+
+        #mutations
+        for _ in range(int(100 * int(self.config['mutation_rate']))):
+            mutation = random.randrange(0.01, 0.03)
+            i1, i2 = random.sample(range(0, n), 2)
+            if 0 < b_new[keys[i1]] + mutation < 1 and 0 < b_new[keys[i2]] - mutation < 1:
+                b_new[keys[i1]] += mutation
+                b_new[keys[i2]] -= mutation
+
+        return b_new
+
+

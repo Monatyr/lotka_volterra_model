@@ -6,23 +6,35 @@
     "plane_height": 600,
     "num_of_predators": 50,
     "num_of_prey": 150,
+    "num_of_grass": 30,
+    "grass_per_round": 0.1,
     "energy_gain": 25,
-    "initial_energy": 300,
-    "procreate_energy": 30,
     "show_images": false
   },
   "animal": {
     "predator": {
+      "initial_energy": 300,
+      "procreate_energy": 100,
+      "mutation_rate": 0.1,
       "image_path": "./assets/wolf.png",
       "image_width": 10,
       "image_ratio": 0.62,
       "color": "red"
     },
     "prey": {
+      "initial_energy": 300,
+      "procreate_energy": 100,
+      "mutation_rate": 0.1,
       "image_path": "./assets/sheep.png",
       "image_width": 10,
       "image_ratio": 0.8,
       "color": "darkblue"
     }
+  },
+  "grass": {
+    "image_path": "./assets/grass.png",
+    "image_width": 10,
+    "image_ratio": 0.8,
+    "color": "darkgreen"
   }
 }
