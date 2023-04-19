@@ -1,12 +1,12 @@
 import pygame
 import random
 import matplotlib
+from sklearn import neighbors
 matplotlib.use('module://pygame_matplotlib.backend_pygame')
 import matplotlib.pyplot as plt
 import json
 from scipy.spatial import KDTree
 
-from Plane.plane import Plane
 from SimulationObject.Animal.animal import Direction, Animal
 from SimulationObject.Animal.predator import Predator
 from SimulationObject.Animal.prey import Prey
@@ -33,7 +33,7 @@ class Engine():
 
     self.show_images = self.config['simulation']['show_images']
     
-    self.plane = Plane(height, width)
+    # self.plane = Plane(height, width)
 
     self.window = pygame.display.set_mode((self.width, self.height))
     self.screen = pygame.Surface((self.screen_width, self.screen_height))
@@ -68,6 +68,7 @@ class Engine():
       if int(self.counter) == 1:
         self.generate_grass(1)
         self.counter = 0
+
       self.run_animal_turn()
 
       #if all animals are gone
@@ -75,73 +76,37 @@ class Engine():
         self.paused = True
         continue
 
-      print(self.objects_count['predator'] + self.objects_count['prey'])
-
-      sprites = list(self.all_objects)
-      self.kd_tree = KDTree([a.pos for a in sprites])
-      
-      pairs = self.kd_tree.query_pairs(r=10)
-      pairs = list(pairs)
-
-      self.object_interactions(pairs, sprites)
+      self.object_interactions()
 
       pygame.display.update()
       self.clock.tick(240)
 
 
-  def move_animal(self, animal: Animal):
-    new_pos = animal.get_new_position()
+  def move_animal(self, animal: Animal, neighbors):
+    # if not neighbors:
+      # new_pos = animal.get_new_position(neighbors)
+    new_pos = animal.get_new_position(neighbors)
     while not self.check_position_validity(new_pos, animal.get_width(), animal.get_height(), self.screen_width, self.screen_width):
-      new_pos = animal.get_new_position()
+      new_pos = animal.get_new_position(neighbors)
     animal.move(new_pos)
-
-
-  def predator_control(self, predator: Predator):
-    dir = Direction.IDLE.value
-    keys = pygame.key.get_pressed()
-
-    if keys[pygame.K_LEFT]:
-      dir = tuple(map(sum, zip(dir, Direction["LEFT"].value)))
-    if keys[pygame.K_RIGHT]:
-      dir = tuple(map(sum, zip(dir, Direction["RIGHT"].value)))
-    if keys[pygame.K_UP]:
-      dir = tuple(map(sum, zip(dir, Direction["UP"].value)))
-    if keys[pygame.K_DOWN]:
-      dir = tuple(map(sum, zip(dir, Direction["DOWN"].value)))
-    
-    new_pos = tuple(map(sum, zip(dir, predator.pos)))
-    if self.check_position_validity(new_pos, predator.get_width(), predator.get_height(), self.screen_width, self.screen_height):
-      predator.move(new_pos)
-
-
-  def prey_control(self, prey: Prey):
-    dir = Direction.IDLE.value
-    keys = pygame.key.get_pressed()
-
-    if keys[pygame.K_a]:
-      dir = tuple(map(sum, zip(dir, Direction["LEFT"].value)))
-    if keys[pygame.K_d]:
-      dir = tuple(map(sum, zip(dir, Direction["RIGHT"].value)))
-    if keys[pygame.K_w]:
-      dir = tuple(map(sum, zip(dir, Direction["UP"].value)))
-    if keys[pygame.K_s]:
-      dir = tuple(map(sum, zip(dir, Direction["DOWN"].value)))
-
-    new_pos = tuple(map(sum, zip(dir, prey.pos)))
-    if self.check_position_validity(new_pos, prey.get_width(), prey.get_height(), self.screen_width, self.screen_height):
-      prey.move(new_pos)
-
+ 
   
   def generate_population(self):
     prey_config = self.config['animal']['prey']
     predator_config = self.config['animal']['predator']
 
+    #IDEA: for prey maybe introduce 3 modes: search for food and eat, run from predators, reproduce
+    #IDEA: for predators maybe instead of walking, running and waiting also introduce: just running (predators faster than prey), waiting (slower energy
+    # consumption) and reproduction
+    prey_behavior = {'eat': 0.34, 'run': 0.33, 'reproduce': 0.33}
+    predator_behavior = {'hunt': 0.34, 'rest': 0.33, 'reproduce': 0.33}
+
     for _ in range(self.prey_num):
       x, y = random.randint(0, self.screen_width-PREY_SIZE[0]),  random.randint(0, self.screen_height-PREY_SIZE[1])
-      self.all_objects.add(Prey((x, y), prey_config["initial_energy"], prey_config, {'eat': 0.5, 'run': 0.5}, self.show_images))
+      self.all_objects.add(Prey((x, y), prey_config["initial_energy"], prey_config, prey_behavior, self.show_images))
     for _ in range(self.predators_num):
       x, y = random.randint(0, self.screen_width-PREDATOR_SIZE[0]),  random.randint(0, self.screen_height-PREDATOR_SIZE[1])
-      self.all_objects.add(Predator((x, y), predator_config["initial_energy"], predator_config, {'hunt': 0.34, 'preserve': 0.33, 'rest': 0.33}, self.show_images))
+      self.all_objects.add(Predator((x, y), predator_config["initial_energy"], predator_config, predator_behavior, self.show_images))
   
 
   def check_position_validity(self, pos: tuple[int, int], obj_w, obj_h, max_w, max_h):
@@ -160,6 +125,9 @@ class Engine():
   def run_animal_turn(self):
     '''Make animal move. Cleanup deceased animals'''
     old_sprites = []
+
+    vision_range = 30
+    pairs = self.get_object_pairs(vision_range)
     
     for object in self.all_objects:
       if isinstance(object, Grass):
@@ -170,28 +138,29 @@ class Engine():
         key = 'prey' if isinstance(animal, Prey) else 'predator'
         old_sprites.append((animal, key))
         continue
-      self.move_animal(animal)
+
+      neighbors = self.get_pairs_dict(30)
+
+      self.move_animal(animal, neighbors.get(animal, None))
       self.screen.blit(animal.image, animal.pos)
 
     for old_sprite, key in old_sprites:
-      old_sprite.alive = False
+      old_sprite.exists = False
       self.all_objects.remove(old_sprite)
       self.objects_count[key] -= 1
   
 
-  def object_interactions(self, pairs, sprites):
+  def object_interactions(self):
     '''Reproduction and hunting'''
-    prey_config = self.config['animal']['prey']
-    predator_config = self.config['animal']['predator']
+    
+    pairs = self.get_object_pairs(10)
 
-    for pair in pairs:
-      a1, a2 = sprites[pair[0]], sprites[pair[1]]
-
+    for a1, a2 in pairs:
       if type(a1) is type(a2):
         if isinstance(a1, Grass):
           continue
-        
-        new_animal = a1.procreate(a2)
+
+        new_animal = a1.reproduce(a2)
         if not new_animal:
           continue
 
@@ -199,33 +168,57 @@ class Engine():
         
         if isinstance(a1, Prey):
             self.objects_count['prey'] += 1
-          # self.all_objects.add(Prey(a1.pos, min_energy - 10, prey_config, {'eat': 0.5, 'run': 0.5}, self.show_images))
         elif isinstance(a1, Predator):
           self.objects_count['predator'] += 1
-          # self.all_objects.add(Predator(a1.pos, min_energy - 10, predator_config, {'hunt': 0.34, 'preserve': 0.33, 'rest': 0.33}, self.show_images))
-      elif type(a1) is not type(a2):
-        if any(isinstance(e, Grass) for e in [a1, a2]) and any(isinstance(e, Prey) for e in [a1, a2]):
-          grass = a1 if isinstance(a1, Grass) else a2
-          prey = a1 if isinstance(a1, Prey) else a2
-          prey.eat(grass.energy)
-          self.all_objects.remove(grass)
-          self.objects_count['grass'] -= 1
-        elif not isinstance(a1, Grass) and not isinstance(a2, Grass):
-          predator = a1 if isinstance(a1, Predator) else a2
-          prey = a1 if isinstance(a1, Prey) else a2
-          if prey.alive:
-            predator.eat(self.config["simulation"]["energy_gain"])
-            self.all_objects.remove(prey)
-            self.objects_count['prey'] -= 1
+
+      else:
+        if any(isinstance(e, Grass) for e in [a1, a2]) and any(isinstance(e, Predator) for e in [a1, a2]):
+          continue
+        elif any(isinstance(e, Grass) for e in [a1, a2]) and any(isinstance(e, Prey) for e in [a1, a2]):
+          consumer = a1 if isinstance(a1, Prey) else a2
+          food = a1 if isinstance(a1, Grass) else a2
+          key = 'grass'
+        else:
+          consumer = a1 if isinstance(a1, Predator) else a2
+          food = a1 if isinstance(a1, Prey) else a2
+          key = 'prey'
+
+        if food.exists:
+          consumer.eat(food)
+          food.exists = False
+          self.all_objects.remove(food)
+          self.objects_count[key] -= 1
 
   
   def generate_grass(self, grass_num):
     grass_config = self.config["grass"]
     for _ in range(grass_num):
       grass_x, grass_y = random.randint(0, self.screen_width-1), random.randint(0, self.screen_height-1)
-      self.all_objects.add(Grass((grass_x, grass_y), self.config["simulation"]["energy_gain"], grass_config, self.show_images))
+      self.all_objects.add(Grass((grass_x, grass_y), grass_config, self.show_images))
 
 
+  def get_object_pairs(self, radius):
+    sprites = list(self.all_objects)
+    self.kd_tree = KDTree([a.pos for a in sprites])
+    pairs = self.kd_tree.query_pairs(r=radius) #the radius is should be the maximum interaction distance between two objects e.g. predator spotting prey
+    pairs = list(map(lambda x: (sprites[x[0]], sprites[x[1]]), list(pairs)))
+    return pairs
+  
+
+  def get_pairs_dict(self, radius):
+    result = {}
+    pairs = self.get_object_pairs(radius)
+
+    for pair in pairs:
+      for i, el in enumerate(pair):
+        if isinstance(el, Animal):
+          curr_dict = result.get(el, el.generate_neighbors_dict())
+          curr_dict = el.add_neighbor(curr_dict, pair[(i+1)%2])
+          result[el] = curr_dict
+    
+    return result
+
+  
   def draw_background(self):
     self.window.fill("black")
     self.window.blit(self.screen, (0, 0))

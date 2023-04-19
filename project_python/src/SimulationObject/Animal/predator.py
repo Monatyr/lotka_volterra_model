@@ -1,14 +1,19 @@
+from __future__ import annotations
 import pygame
+import random
+from math import sqrt
 from SimulationObject.Animal.animal import Animal
+from SimulationObject.Animal.prey import Prey
+from SimulationObject.Animal.animal import Direction
+from SimulationObject.Grass.grass import Grass
 
 class Predator(Animal):
-    def __init__(self, pos: tuple[int, int], energy: int, config, behavior: dict=None, show_image: bool=False):
+    def __init__(self, pos: tuple[int, int], energy: int, config, behavior: dict, show_image: bool=False):
         super().__init__(pos, energy, config, behavior)
 
         self.sprite_width = config['image_width']
         self.sprite_height = int(self.sprite_width * config['image_ratio']) if show_image else config['image_width']
         self.rect = pygame.Rect(pos[0], pos[1], self.sprite_width, self.sprite_height)
-        # self.behavior = {'hunt': 0.34, 'preserve': 0.33, 'rest': 0.33}
 
         if show_image:
             # --- IMAGE ---
@@ -20,9 +25,50 @@ class Predator(Animal):
             self.image.fill(config['color'])
 
 
-    def procreate(self, other: Animal):
-        new_behavior = super().procreate(other)
+    def generate_move(self, neighbors: dict):
+        behavior = self.generate_behavior()
+        if behavior == 'rest':
+            return Direction.IDLE.value
+        
+        if not neighbors:
+            return self.random_move()
+        
+        hunt = (behavior == 'hunt' and neighbors['prey'][0] is not None)
+        reproduce = (behavior == 'reproduce' and neighbors['partner'][0] is not None)
+        
+        if hunt:
+            target = neighbors['prey'][0]
+        elif reproduce:
+            target = neighbors['partner'][0]
+        else:
+            return self.random_move()
+        
+        vector = (target.pos[0] - self.pos[0], target.pos[1] - self.pos[1])
+        vector = (vector[0]/abs(vector[0]) if vector[0] else 0, vector[1]/abs(vector[1]) if vector[1] else 0)
+
+        moves = Direction.get_base_directions(vector)
+        return random.choice(moves)
+
+
+    def reproduce(self, other: Animal) -> Predator:
+        new_behavior = super().reproduce(other)
         if new_behavior:
-            return Predator(self.pos, int(self.config['procreate_energy']) - 10, self.config, new_behavior, self.show_image)
+            return Predator(self.pos, int(self.config['reproduce_energy']) - 10, self.config, new_behavior, self.show_image)
         return None
     
+
+    def generate_neighbors_dict(self):
+        return {'partner': (None, float('+inf')), 'prey': (None, float('+inf'))}
+    
+
+    def add_neighbor(self, neighbors_dict, neighbor):
+        if isinstance(neighbor, Grass):
+            return neighbors_dict
+        
+        distance = sqrt((self.pos[0] - neighbor.pos[0])**2 + (self.pos[1] - neighbor.pos[1])**2)
+        
+        if isinstance(neighbor, Predator) and distance < neighbors_dict['partner'][1]:
+            neighbors_dict['partner'] = (neighbor, distance)
+        elif distance < neighbors_dict['prey'][1]:
+            neighbors_dict['prey'] = (neighbor, distance)
+        return neighbors_dict

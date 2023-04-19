@@ -1,11 +1,11 @@
 {
   "simulation": {
-    "display_width": 1000, 
+    "display_width": 1000,
     "display_height": 600,
     "plane_width": 600,
     "plane_height": 600,
-    "num_of_predators": 50,
-    "num_of_prey": 150,
+    "num_of_predators": 10,
+    "num_of_prey": 30,
     "num_of_grass": 30,
     "grass_per_round": 0.1,
     "energy_gain": 25,
@@ -14,7 +14,7 @@
   "animal": {
     "predator": {
       "initial_energy": 300,
-      "procreate_energy": 100,
+      "reproduce_energy": 100,
       "mutation_rate": 0.1,
       "image_path": "./assets/wolf.png",
       "image_width": 10,
@@ -23,8 +23,9 @@
     },
     "prey": {
       "initial_energy": 300,
-      "procreate_energy": 100,
+      "reproduce_energy": 100,
       "mutation_rate": 0.1,
+      "nutrition_value": 50,
       "image_path": "./assets/sheep.png",
       "image_width": 10,
       "image_ratio": 0.8,
@@ -32,6 +33,7 @@
     }
   },
   "grass": {
+    "nutrition_value": 30,
     "image_path": "./assets/grass.png",
     "image_width": 10,
     "image_ratio": 0.8,

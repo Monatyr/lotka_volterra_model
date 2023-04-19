@@ -1,8 +1,6 @@
 from __future__ import annotations
 import random
 from enum import Enum
-
-from scipy import rand
 from SimulationObject.simulation_object import SimulationObject
 from abc import ABC, abstractmethod
 
@@ -13,11 +11,29 @@ class Direction(Enum):
     RIGHT = (1, 0)
     IDLE = (0, 0)
 
+    @classmethod
+    def get_base_directions(cls, direction):
+        if direction in [e.value for e in Direction]:
+            return [direction]
+        
+        result = []
+        if direction[0] == 1:
+            result.append(Direction.RIGHT.value)
+        if direction[0] == -1:
+            result.append(Direction.LEFT.value)
+        if direction[1] == 1:
+            result.append(Direction.DOWN.value)
+        if direction[1] == -1:
+            result.append(Direction.UP.value)
+
+        if not result:
+            return [Direction.IDLE.value]
+        return result
+
 
 class Animal(SimulationObject, ABC):
     def __init__(self, pos: tuple[int, int], energy: int, config, behavior: dict=None, show_image: bool=False):
         super().__init__(pos)
-        self.alive = True
         self.sprite_height = 32
         self.sprite_width = 32
 
@@ -36,10 +52,15 @@ class Animal(SimulationObject, ABC):
             new_pos = tuple(map(sum, zip(self.pos, direction)))
         
         return direction
+    
 
-
-    def generate_move(self):
+    def random_move(self):
         return random.choice(list(Direction)).value
+
+
+    @abstractmethod
+    def generate_move(self, neighbors: dict):
+        return
 
 
     def move(self, new_pos: tuple[int, int]):
@@ -47,13 +68,13 @@ class Animal(SimulationObject, ABC):
         self.energy -= 0.1
 
 
-    def get_new_position(self):
-        direction = self.generate_move()
+    def get_new_position(self, neighbors):
+        direction = self.generate_move(neighbors)
         return tuple(map(sum, zip(self.pos, direction)))
 
 
-    def eat(self, energy_consumed):
-        self.energy += energy_consumed
+    def eat(self, food: SimulationObject):
+        self.energy += food.nutrition_value
 
 
     def get_width(self):
@@ -62,18 +83,33 @@ class Animal(SimulationObject, ABC):
 
     def get_height(self):
         return self.sprite_height
+    
+
+    def generate_behavior(self):
+        index = random.random()
+        for key, value in self.behavior.items():
+            if index < value:
+                return key
+            else:
+                index -= value
 
 
-    # @abstractmethod
-    # def procreate(self, other: Animal):
-    #     pass
+    @abstractmethod
+    def generate_neighbors_dict(self):
+        return
+    
 
-    def procreate(self, other: Animal):
-        if self.energy < self.config['procreate_energy'] or other.energy < other.config['procreate_energy']:
+    @abstractmethod
+    def add_neighbor(self, neighbors_dict: dict, neighbor: SimulationObject):
+        return
+
+
+    def reproduce(self, other: Animal) -> dict:
+        if self.energy < self.config['reproduce_energy'] or other.energy < other.config['reproduce_energy']:
             return None
         
-        self.energy -= self.config['procreate_energy']//2
-        other.energy -= other.config['procreate_energy']//2
+        self.energy -= self.config['reproduce_energy']//2
+        other.energy -= other.config['reproduce_energy']//2
 
         b1, b2 = self.behavior, other.behavior
         keys = b1.keys()

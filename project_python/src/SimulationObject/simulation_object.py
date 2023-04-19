@@ -5,3 +5,5 @@ class SimulationObject(Sprite):
     def __init__(self, pos: tuple[int, int]):
         Sprite.__init__(self)
         self.pos = pos
+        self.exists = True
+        self.nutrition_value = None
