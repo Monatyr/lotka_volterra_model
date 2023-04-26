@@ -1,7 +1,9 @@
 from __future__ import annotations
 import random
+import operator
 from enum import Enum
 from SimulationObject.simulation_object import SimulationObject
+from numpy.random import choice 
 from abc import ABC, abstractmethod
 
 class Direction(Enum):
@@ -10,6 +12,19 @@ class Direction(Enum):
     LEFT = (-1, 0)
     RIGHT = (1, 0)
     IDLE = (0, 0)
+
+
+    @classmethod
+    def get_random_weighted_direction(cls, last_direction):
+        directions = Direction.get_directions_list(False)
+        if last_direction == Direction.IDLE:
+            return random.choice(directions)
+        
+        last_direction_index = directions.index(last_direction)
+        res = choice(directions, None, p=[0.7 if i == last_direction_index else 0.1 for i in range(4)])
+        # print(last_direction == res)
+        return res
+
 
     @classmethod
     def get_base_directions(cls, direction):
@@ -29,6 +44,15 @@ class Direction(Enum):
         if not result:
             return [Direction.IDLE.value]
         return result
+    
+
+    @classmethod
+    def get_directions_list(cls, with_idle: bool=True):
+        result = [Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT]
+        if with_idle:
+            result.append(Direction.IDLE)
+        return result
+
 
 
 class Animal(SimulationObject, ABC):
@@ -41,6 +65,7 @@ class Animal(SimulationObject, ABC):
         self.energy = energy
         self.behavior = behavior
         self.show_image = show_image
+        self.last_move = Direction.IDLE
 
 
     def generate_move_constrained(self, max_w, max_h):
@@ -55,7 +80,10 @@ class Animal(SimulationObject, ABC):
     
 
     def random_move(self):
-        return random.choice(list(Direction)).value
+        res = Direction.get_random_weighted_direction(self.last_move)
+        # print("RES", res, type(res))
+        return res.value
+        # return random.choice(list(Direction)).value
 
 
     @abstractmethod
@@ -64,6 +92,9 @@ class Animal(SimulationObject, ABC):
 
 
     def move(self, new_pos: tuple[int, int]):
+        diff = tuple(map(operator.sub, new_pos, self.pos))
+        # print("DIRECTION(DIFF): ", Direction(diff))
+        self.last_move = Direction(diff)
         self.pos = new_pos
         self.energy -= 0.1
 
@@ -112,7 +143,7 @@ class Animal(SimulationObject, ABC):
         other.energy -= other.config['reproduce_energy']//2
 
         b1, b2 = self.behavior, other.behavior
-        keys = b1.keys()
+        keys = list(b1.keys())
         n = len(b1)
         b_new = {}
 
@@ -121,13 +152,14 @@ class Animal(SimulationObject, ABC):
             b_new[k1] = (v1 + v2) / 2
 
         #mutations
-        for _ in range(int(100 * int(self.config['mutation_rate']))):
-            mutation = random.randrange(0.01, 0.03)
+        print(int(100 * self.config['mutation_rate']))
+        for _ in range(int(100 * self.config['mutation_rate'])):
+            mutation = random.uniform(0.01, 0.03)
             i1, i2 = random.sample(range(0, n), 2)
             if 0 < b_new[keys[i1]] + mutation < 1 and 0 < b_new[keys[i2]] - mutation < 1:
                 b_new[keys[i1]] += mutation
                 b_new[keys[i2]] -= mutation
-
+                
         return b_new
 
 

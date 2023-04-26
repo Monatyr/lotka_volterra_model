@@ -1,6 +1,7 @@
 from __future__ import annotations
 import pygame
 import random
+import operator
 from math import sqrt
 from SimulationObject.Animal.animal import Animal
 from SimulationObject.Animal.prey import Prey
@@ -23,6 +24,13 @@ class Predator(Animal):
             # --- RECTANGLE ---
             self.image = pygame.Surface((self.sprite_width, self.sprite_height))
             self.image.fill(config['color'])
+
+    
+    # def move(self, new_pos: tuple[int, int]):
+    #     diff = tuple(map(operator.sub, new_pos, self.pos))
+    #     self.last_move = Direction(diff)
+    #     self.pos = new_pos
+    #     self.energy -= 0.1
 
 
     def generate_move(self, neighbors: dict):
@@ -47,6 +55,7 @@ class Predator(Animal):
         vector = (vector[0]/abs(vector[0]) if vector[0] else 0, vector[1]/abs(vector[1]) if vector[1] else 0)
 
         moves = Direction.get_base_directions(vector)
+        # return tuple(map(operator.mul, (2, 2), random.choice(moves)))
         return random.choice(moves)
 
 

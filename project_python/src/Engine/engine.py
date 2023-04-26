@@ -66,6 +66,7 @@ class Engine():
       self.draw_background()
 
       if int(self.counter) == 1:
+        print(self.objects_count['predator'], self.objects_count['prey'])
         self.generate_grass(1)
         self.counter = 0
 
@@ -99,7 +100,7 @@ class Engine():
     #IDEA: for predators maybe instead of walking, running and waiting also introduce: just running (predators faster than prey), waiting (slower energy
     # consumption) and reproduction
     prey_behavior = {'eat': 0.34, 'run': 0.33, 'reproduce': 0.33}
-    predator_behavior = {'hunt': 0.34, 'rest': 0.33, 'reproduce': 0.33}
+    predator_behavior = {'hunt': 0.5, 'rest': 0.25, 'reproduce': 0.25}
 
     for _ in range(self.prey_num):
       x, y = random.randint(0, self.screen_width-PREY_SIZE[0]),  random.randint(0, self.screen_height-PREY_SIZE[1])
