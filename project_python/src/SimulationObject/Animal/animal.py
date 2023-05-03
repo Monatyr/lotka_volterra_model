@@ -21,8 +21,7 @@ class Direction(Enum):
             return random.choice(directions)
         
         last_direction_index = directions.index(last_direction)
-        res = choice(directions, None, p=[0.7 if i == last_direction_index else 0.1 for i in range(4)])
-        # print(last_direction == res)
+        res = choice(directions, None, p=[0.85 if i == last_direction_index else 0.05 for i in range(4)])
         return res
 
 
@@ -81,9 +80,7 @@ class Animal(SimulationObject, ABC):
 
     def random_move(self):
         res = Direction.get_random_weighted_direction(self.last_move)
-        # print("RES", res, type(res))
         return res.value
-        # return random.choice(list(Direction)).value
 
 
     @abstractmethod
@@ -91,9 +88,8 @@ class Animal(SimulationObject, ABC):
         return
 
 
-    def move(self, new_pos: tuple[int, int]):
+    def move(self, new_pos: tuple[int, int], ):
         diff = tuple(map(operator.sub, new_pos, self.pos))
-        # print("DIRECTION(DIFF): ", Direction(diff))
         self.last_move = Direction(diff)
         self.pos = new_pos
         self.energy -= 0.1
@@ -159,7 +155,7 @@ class Animal(SimulationObject, ABC):
             if 0 < b_new[keys[i1]] + mutation < 1 and 0 < b_new[keys[i2]] - mutation < 1:
                 b_new[keys[i1]] += mutation
                 b_new[keys[i2]] -= mutation
-                
+
         return b_new
 
 

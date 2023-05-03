@@ -70,7 +70,7 @@ class Engine():
         self.generate_grass(1)
         self.counter = 0
 
-      self.run_animal_turn()
+      self.run_animals_turn()
 
       #if all animals are gone
       if not (self.objects_count['predator'] > 0 or self.objects_count['prey'] > 0) :
@@ -84,8 +84,6 @@ class Engine():
 
 
   def move_animal(self, animal: Animal, neighbors):
-    # if not neighbors:
-      # new_pos = animal.get_new_position(neighbors)
     new_pos = animal.get_new_position(neighbors)
     while not self.check_position_validity(new_pos, animal.get_width(), animal.get_height(), self.screen_width, self.screen_width):
       new_pos = animal.get_new_position(neighbors)
@@ -123,13 +121,13 @@ class Engine():
             self.paused = not self.paused
 
   
-  def run_animal_turn(self):
-    '''Make animal move. Cleanup deceased animals'''
+  def run_animals_turn(self):
+    '''Make animals move. Cleanup deceased animals'''
     old_sprites = []
 
     vision_range = 30
-    pairs = self.get_object_pairs(vision_range)
-    
+    neighbors = self.get_pairs_dict(vision_range)
+
     for object in self.all_objects:
       if isinstance(object, Grass):
         self.screen.blit(object.image, object.pos)
@@ -139,8 +137,6 @@ class Engine():
         key = 'prey' if isinstance(animal, Prey) else 'predator'
         old_sprites.append((animal, key))
         continue
-
-      neighbors = self.get_pairs_dict(30)
 
       self.move_animal(animal, neighbors.get(animal, None))
       self.screen.blit(animal.image, animal.pos)
