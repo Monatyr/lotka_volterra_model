@@ -14,6 +14,7 @@ class Predator(Animal):
         self.sprite_width = config['image_width']
         self.sprite_height = int(self.sprite_width * config['image_ratio']) if show_image else config['image_width']
         self.rect = pygame.Rect(pos[0], pos[1], self.sprite_width, self.sprite_height)
+        self.is_resting = False
 
         if show_image:
             # --- IMAGE ---
@@ -25,17 +26,19 @@ class Predator(Animal):
             self.image.fill(config['color'])
 
     
-    def move(self, new_pos: tuple[int, int], rest):
+    def move(self, new_pos: tuple[int, int]):
         diff = tuple(map(operator.sub, new_pos, self.pos))
         self.last_move = Direction(diff)
         self.pos = new_pos
-        if not rest:
+        if not self.is_resting:
             self.energy -= 0.1
+        self.is_resting = False
 
 
     def generate_move(self, neighbors: dict):
         behavior = self.generate_behavior()
         if behavior == 'rest':
+            self.is_resting = True
             return Direction.IDLE.value
         
         if not neighbors:

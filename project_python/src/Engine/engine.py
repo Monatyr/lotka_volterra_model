@@ -1,7 +1,6 @@
 import pygame
 import random
 import matplotlib
-from sklearn import neighbors
 matplotlib.use('module://pygame_matplotlib.backend_pygame')
 import matplotlib.pyplot as plt
 import json
@@ -32,9 +31,8 @@ class Engine():
       self.config = json.load(file)
 
     self.show_images = self.config['simulation']['show_images']
+    self.vision_range = self.config['simulation']['vision_range']
     
-    # self.plane = Plane(height, width)
-
     self.window = pygame.display.set_mode((self.width, self.height))
     self.screen = pygame.Surface((self.screen_width, self.screen_height))
     self.clock = pygame.time.Clock()
@@ -125,8 +123,7 @@ class Engine():
     '''Make animals move. Cleanup deceased animals'''
     old_sprites = []
 
-    vision_range = 30
-    neighbors = self.get_pairs_dict(vision_range)
+    neighbors = self.get_pairs_dict(self.vision_range)
 
     for object in self.all_objects:
       if isinstance(object, Grass):

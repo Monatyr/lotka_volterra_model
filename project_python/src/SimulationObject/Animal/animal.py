@@ -148,7 +148,6 @@ class Animal(SimulationObject, ABC):
             b_new[k1] = (v1 + v2) / 2
 
         #mutations
-        print(int(100 * self.config['mutation_rate']))
         for _ in range(int(100 * self.config['mutation_rate'])):
             mutation = random.uniform(0.01, 0.03)
             i1, i2 = random.sample(range(0, n), 2)
@@ -156,6 +155,7 @@ class Animal(SimulationObject, ABC):
                 b_new[keys[i1]] += mutation
                 b_new[keys[i2]] -= mutation
 
+        print(b_new)
         return b_new
 
 
