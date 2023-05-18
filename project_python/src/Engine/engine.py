@@ -1,3 +1,4 @@
+import math
 import pygame
 import random
 import matplotlib
@@ -97,6 +98,7 @@ class Engine():
     # consumption) and reproduction
     prey_behavior = {'eat': 0.34, 'run': 0.33, 'reproduce': 0.33}
     predator_behavior = {'hunt': 0.5, 'rest': 0.25, 'reproduce': 0.25}
+    # predator_behavior = {'hunt': 0.01, 'rest': 0.01, 'reproduce': 0.98}
 
     for _ in range(self.prey_num):
       x, y = random.randint(0, self.screen_width-PREY_SIZE[0]),  random.randint(0, self.screen_height-PREY_SIZE[1])
@@ -117,7 +119,7 @@ class Engine():
             self.running = False
           if event.key == pygame.K_SPACE:
             self.paused = not self.paused
-
+            
   
   def run_animals_turn(self):
     '''Make animals move. Cleanup deceased animals'''

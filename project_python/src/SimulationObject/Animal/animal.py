@@ -155,7 +155,10 @@ class Animal(SimulationObject, ABC):
                 b_new[keys[i1]] += mutation
                 b_new[keys[i2]] -= mutation
 
-        print(b_new)
         return b_new
+    
+
+    def can_reproduce(self):
+        return self.energy >= self.config['reproduce_energy']
 
 

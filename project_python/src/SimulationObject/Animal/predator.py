@@ -30,8 +30,7 @@ class Predator(Animal):
         diff = tuple(map(operator.sub, new_pos, self.pos))
         self.last_move = Direction(diff)
         self.pos = new_pos
-        if not self.is_resting:
-            self.energy -= 0.1
+        self.energy = self.energy - 0.05 if self.is_resting else self.energy - 0.1
         self.is_resting = False
 
 
@@ -45,7 +44,7 @@ class Predator(Animal):
             return self.random_move()
         
         hunt = (behavior == 'hunt' and neighbors['prey'][0] is not None)
-        reproduce = (behavior == 'reproduce' and neighbors['partner'][0] is not None)
+        reproduce = (behavior == 'reproduce' and neighbors['partner'][0] is not None and self.can_reproduce())
         
         if hunt:
             target = neighbors['prey'][0]
@@ -56,7 +55,6 @@ class Predator(Animal):
         
         vector = (target.pos[0] - self.pos[0], target.pos[1] - self.pos[1])
         vector = (vector[0]/abs(vector[0]) if vector[0] else 0, vector[1]/abs(vector[1]) if vector[1] else 0)
-
         moves = Direction.get_base_directions(vector)
         return random.choice(moves)
 

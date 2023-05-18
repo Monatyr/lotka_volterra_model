@@ -34,7 +34,7 @@ class Prey(Animal):
 
         eat = (behavior == 'eat' and neighbors['food'][0] is not None)
         run = (behavior == 'run' and neighbors['predator'][0] is not None)
-        reproduce = (behavior == 'reproduce' and neighbors['partner'][0] is not None)
+        reproduce = (behavior == 'reproduce' and neighbors['partner'][0] is not None and self.can_reproduce())
 
         if eat:
             target = neighbors['food'][0]
