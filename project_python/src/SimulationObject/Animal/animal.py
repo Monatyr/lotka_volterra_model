@@ -15,13 +15,14 @@ class Direction(Enum):
 
 
     @classmethod
-    def get_random_weighted_direction(cls, last_direction):
+    def get_random_weighted_direction(cls, last_direction, favorite_move):
         directions = Direction.get_directions_list(False)
         if last_direction == Direction.IDLE:
             return random.choice(directions)
         
-        last_direction_index = directions.index(last_direction)
-        res = choice(directions, None, p=[0.85 if i == last_direction_index else 0.05 for i in range(4)])
+        # last_direction_index = directions.index(last_direction)
+        # res = choice(directions, None, p=[0.85 if i == last_direction_index else 0.05 for i in range(4)])
+        res = choice(directions, None, p=[0.7 if el == favorite_move else 0.1 for el in directions])
         return res
 
 
@@ -65,6 +66,8 @@ class Animal(SimulationObject, ABC):
         self.behavior = behavior
         self.show_image = show_image
         self.last_move = Direction.IDLE
+        self.move_tendency = {}
+        self.favorite_move = choice(Direction.get_directions_list(False))
 
 
     def generate_move_constrained(self, max_w, max_h):
@@ -79,7 +82,7 @@ class Animal(SimulationObject, ABC):
     
 
     def random_move(self):
-        res = Direction.get_random_weighted_direction(self.last_move)
+        res = Direction.get_random_weighted_direction(self.last_move, self.favorite_move)
         return res.value
 
 
@@ -92,7 +95,7 @@ class Animal(SimulationObject, ABC):
         diff = tuple(map(operator.sub, new_pos, self.pos))
         self.last_move = Direction(diff)
         self.pos = new_pos
-        self.energy -= 0.1
+        self.energy -= 0.5
 
 
     def get_new_position(self, neighbors):
@@ -131,6 +134,10 @@ class Animal(SimulationObject, ABC):
         return
 
 
+    def can_reproduce(self):
+        return self.energy >= self.config['reproduce_energy']
+
+
     def reproduce(self, other: Animal) -> dict:
         if self.energy < self.config['reproduce_energy'] or other.energy < other.config['reproduce_energy']:
             return None
@@ -156,9 +163,14 @@ class Animal(SimulationObject, ABC):
                 b_new[keys[i2]] -= mutation
 
         return b_new
-    
-
-    def can_reproduce(self):
-        return self.energy >= self.config['reproduce_energy']
 
 
+    def change_favorite_direction(self, new_pos, width):
+        if new_pos[0] <= 0:
+            self.favorite_move = Direction.RIGHT
+        if new_pos[0] >= width - self.sprite_height:
+            self.favorite_move = Direction.LEFT
+        if new_pos[1] <= 0:
+            self.favorite_move = Direction.DOWN
+        else:
+            self.favorite_move = Direction.UP

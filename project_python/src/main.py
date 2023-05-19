@@ -12,3 +12,4 @@ if __name__ == "__main__":
 
   engine = Engine(width, height, plane_width, plane_height, predators_num, prey_num, grass_num)
   engine.run()
+  

@@ -55,6 +55,7 @@ class Predator(Animal):
         
         vector = (target.pos[0] - self.pos[0], target.pos[1] - self.pos[1])
         vector = (vector[0]/abs(vector[0]) if vector[0] else 0, vector[1]/abs(vector[1]) if vector[1] else 0)
+
         moves = Direction.get_base_directions(vector)
         return random.choice(moves)
 
@@ -78,6 +79,6 @@ class Predator(Animal):
         
         if isinstance(neighbor, Predator) and distance < neighbors_dict['partner'][1]:
             neighbors_dict['partner'] = (neighbor, distance)
-        elif distance < neighbors_dict['prey'][1]:
+        elif not isinstance(neighbor, Predator) and distance < neighbors_dict['prey'][1]:
             neighbors_dict['prey'] = (neighbor, distance)
         return neighbors_dict

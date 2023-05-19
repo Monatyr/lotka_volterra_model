@@ -5,10 +5,10 @@
     "plane_width": 600,
     "plane_height": 600,
     "scale": 10,
-    "num_of_predators": 40,
-    "num_of_prey": 200,
+    "num_of_predators": 10,
+    "num_of_prey": 50,
     "num_of_grass": 30,
-    "grass_per_round": 0.1,
+    "grass_per_round": 0.5,
     "show_images": false,
     "vision_range": 30
   },
@@ -26,7 +26,7 @@
       "initial_energy": 300,
       "reproduce_energy": 100,
       "mutation_rate": 0.1,
-      "nutrition_value": 100,
+      "nutrition_value": 50,
       "image_path": "./assets/sheep.png",
       "image_width": 10,
       "image_ratio": 0.8,
@@ -34,7 +34,7 @@
     }
   },
   "grass": {
-    "nutrition_value": 30,
+    "nutrition_value": 100,
     "image_path": "./assets/grass.png",
     "image_width": 10,
     "image_ratio": 0.8,

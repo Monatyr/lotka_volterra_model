@@ -16,6 +16,7 @@ from SimulationObject.Grass.grass import Grass
 PREDATOR_SIZE = (78, 48)
 PREY_SIZE = (54, 43)
 
+
 class Engine():
   def __init__(self, width, height, screen_width, screen_height, predators_num, prey_num, grass_num):
     self.width = width
@@ -85,6 +86,7 @@ class Engine():
   def move_animal(self, animal: Animal, neighbors):
     new_pos = animal.get_new_position(neighbors)
     while not self.check_position_validity(new_pos, animal.get_width(), animal.get_height(), self.screen_width, self.screen_width):
+      animal.change_favorite_direction(new_pos, self.screen_width)
       new_pos = animal.get_new_position(neighbors)
     animal.move(new_pos)
  
@@ -97,7 +99,7 @@ class Engine():
     #IDEA: for predators maybe instead of walking, running and waiting also introduce: just running (predators faster than prey), waiting (slower energy
     # consumption) and reproduction
     prey_behavior = {'eat': 0.34, 'run': 0.33, 'reproduce': 0.33}
-    predator_behavior = {'hunt': 0.5, 'rest': 0.25, 'reproduce': 0.25}
+    predator_behavior = {'hunt': 0.34, 'rest': 0.33, 'reproduce': 0.33}
     # predator_behavior = {'hunt': 0.01, 'rest': 0.01, 'reproduce': 0.98}
 
     for _ in range(self.prey_num):
@@ -119,7 +121,13 @@ class Engine():
             self.running = False
           if event.key == pygame.K_SPACE:
             self.paused = not self.paused
-            
+        if event.type == pygame.MOUSEBUTTONDOWN:
+          mouse_pos = pygame.mouse.get_pos()
+          local_animals = list(map(lambda x: (x.behavior, x.energy, x.favorite_move), filter(lambda x: isinstance(x, Animal) and abs(mouse_pos[0] - x.pos[0]) <= 10 and abs(mouse_pos[1] - x.pos[1]) <= 10, list(self.all_objects))))
+          for el in local_animals:
+            print(el)
+          print(len(local_animals))
+
   
   def run_animals_turn(self):
     '''Make animals move. Cleanup deceased animals'''
@@ -219,7 +227,3 @@ class Engine():
     self.window.fill("black")
     self.window.blit(self.screen, (0, 0))
     self.screen.fill('#57B669')
-
-  
-
-  

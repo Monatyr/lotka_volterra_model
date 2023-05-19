@@ -5,7 +5,7 @@ import random
 from SimulationObject.Animal.animal import Animal
 from SimulationObject.Grass.grass import Grass
 from SimulationObject.Animal.animal import Direction
-# from SimulationObject.Animal.predator import Predator
+
 
 class Prey(Animal):
     def __init__(self, pos: tuple[int, int], energy: int, config, behavior: dict, show_image: bool=False):
@@ -75,4 +75,3 @@ class Prey(Animal):
         elif distance < neighbors_dict['predator'][1]:
             neighbors_dict['predator'] = (neighbor, distance)
         return neighbors_dict
-
