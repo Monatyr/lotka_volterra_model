@@ -8,17 +8,17 @@ from SimulationObject.Animal.animal import Direction
 from SimulationObject.Grass.grass import Grass
 
 class Predator(Animal):
-    def __init__(self, pos: tuple[int, int], energy: int, config, behavior: dict, show_image: bool=False):
+    def __init__(self, pos: tuple[int, int], energy: int, config, behavior: dict, image: pygame.image=None):
         super().__init__(pos, energy, config, behavior)
 
         self.sprite_width = config['image_width']
-        self.sprite_height = int(self.sprite_width * config['image_ratio']) if show_image else config['image_width']
+        self.sprite_height = int(self.sprite_width * config['image_ratio']) if image else config['image_width']
         self.rect = pygame.Rect(pos[0], pos[1], self.sprite_width, self.sprite_height)
         self.is_resting = False
 
-        if show_image:
+        if image:
             # --- IMAGE ---
-            self.image = pygame.image.load('assets/wolf.png').convert_alpha()
+            self.image = image
             self.image = pygame.transform.scale(self.image, (self.sprite_width, self.sprite_height))
         else:
             # --- RECTANGLE ---
@@ -63,7 +63,7 @@ class Predator(Animal):
     def reproduce(self, other: Animal) -> Predator:
         new_behavior = super().reproduce(other)
         if new_behavior:
-            return Predator(self.pos, int(self.config['reproduce_energy']) - 10, self.config, new_behavior, self.show_image)
+            return Predator(self.pos, int(self.config['reproduce_energy']) - 10, self.config, new_behavior, self.image)
         return None
     
 
