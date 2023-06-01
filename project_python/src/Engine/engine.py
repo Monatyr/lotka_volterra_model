@@ -1,6 +1,7 @@
 import pygame
 import random
 import matplotlib
+
 matplotlib.use('module://pygame_matplotlib.backend_pygame')
 import matplotlib.pyplot as plt
 import json
@@ -11,6 +12,7 @@ from SimulationObject.Animal.animal import Animal
 from SimulationObject.Animal.predator import Predator
 from SimulationObject.Animal.prey import Prey
 from SimulationObject.Grass.grass import Grass
+from SidePanel.sidePanel import SidePanel
 
 
 PREDATOR_SIZE = (78, 48)
@@ -41,10 +43,8 @@ class Engine():
     
     self.window = pygame.display.set_mode((self.width, self.height))
     self.screen = pygame.Surface((self.screen_width, self.screen_height))
-    self.graph = pygame.Surface((self.width - self.screen_width, self.screen_height*3//5))
-    self.info = pygame.Surface((self.width - self.screen_width, self.screen_height*2//5))
-    # self.info_font = pygame.font.SysFont(pygame.font.get_default_font(), 40)
-    self.info_font = pygame.font.SysFont('dubai', 30)
+    self.info_panel = SidePanel(self.width - self.screen_width, self.height, self.prey_num, self.predators_num)
+
     self.predator_image = pygame.image.load('assets/fox.png').convert_alpha()
     self.prey_image = pygame.image.load('assets/hare.png').convert_alpha()
     self.grass_image = pygame.image.load('assets/grass.png').convert_alpha()
@@ -74,8 +74,9 @@ class Engine():
       if self.paused:
         continue
 
-      self.counter += float(self.config["simulation"]["grass_per_round"])
       self.update_frontend()
+
+      self.counter += float(self.config["simulation"]["grass_per_round"])
 
       if int(self.counter) == 1:
         self.result_file.write(f"{self.objects_count['predator']}, {self.objects_count['prey']}\n")
@@ -237,25 +238,10 @@ class Engine():
 
   
   def draw_background(self):
-    self.graph.fill("#312E38")
     self.window.blit(self.screen, (0, 0))
-    self.window.blit(self.graph, (self.screen_width, 0))
-    self.window.blit(self.info, (self.screen_width, self.screen_height*3//5))
     self.screen.fill('#57B669')
 
-
+  
   def show_info(self):
-    self.info.fill("#26252D")
-    
-    prey_surface = self.info_font.render("Prey", True, (255, 255, 255))
-    prey_num = self.info_font.render(str(self.objects_count['prey']), True, (255, 255, 255))
-    predator_surface = self.info_font.render("Predator", True, (255, 255, 255))
-    predator_num = self.info_font.render(str(self.objects_count['predator']), True, (255, 255, 255))
-    
-    self.info.blit(prey_surface, (80, 50))
-    self.info.blit(prey_num, (250, 50))
-    self.info.blit(predator_surface, (65, 150))
-    self.info.blit(predator_num, (250, 150))
-
-    # self.info.blit()
-    
+    info_panel = self.info_panel.render(self.objects_count['prey'], self.objects_count['predator'])
+    self.window.blit(info_panel, (self.screen_width, 0))
