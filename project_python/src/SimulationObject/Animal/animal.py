@@ -20,9 +20,8 @@ class Direction(Enum):
         if last_direction == Direction.IDLE:
             return random.choice(directions)
         
-        # last_direction_index = directions.index(last_direction)
-        # res = choice(directions, None, p=[0.85 if i == last_direction_index else 0.05 for i in range(4)])
         res = choice(directions, None, p=[0.7 if el == favorite_move else 0.1 for el in directions])
+        # res = choice(directions, None, p=[0.85 if el == favorite_move else 0.05 for el in directions])
         return res
 
 
@@ -95,7 +94,6 @@ class Animal(SimulationObject, ABC):
         diff = tuple(map(operator.sub, new_pos, self.pos))
         self.last_move = Direction(diff)
         self.pos = new_pos
-        self.energy -= 0.5
 
 
     def get_new_position(self, neighbors):
@@ -168,9 +166,10 @@ class Animal(SimulationObject, ABC):
     def change_favorite_direction(self, new_pos, width):
         if new_pos[0] <= 0:
             self.favorite_move = Direction.RIGHT
-        if new_pos[0] >= width - self.sprite_height:
+        elif new_pos[0] >= width - self.sprite_width:
             self.favorite_move = Direction.LEFT
-        if new_pos[1] <= 0:
+        elif new_pos[1] <= 0:
             self.favorite_move = Direction.DOWN
         else:
             self.favorite_move = Direction.UP
+        self.favorite_move = random.choice(Direction.get_directions_list(False))

@@ -5,7 +5,7 @@
     "plane_width": 600,
     "plane_height": 600,
     "scale": 10,
-    "num_of_predators": 20,
+    "num_of_predators": 10,
     "num_of_prey": 50,
     "num_of_grass": 30,
     "grass_per_round": 0.5,

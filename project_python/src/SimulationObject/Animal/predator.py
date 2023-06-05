@@ -27,10 +27,8 @@ class Predator(Animal):
 
     
     def move(self, new_pos: tuple[int, int]):
-        diff = tuple(map(operator.sub, new_pos, self.pos))
-        self.last_move = Direction(diff)
-        self.pos = new_pos
-        self.energy = self.energy - 0.05 if self.is_resting else self.energy - 0.1
+        super().move(new_pos)
+        self.energy = self.energy - 0.1 if self.is_resting else self.energy - 0.2
         self.is_resting = False
 
 

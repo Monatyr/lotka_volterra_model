@@ -53,6 +53,11 @@ class Prey(Animal):
 
         moves = Direction.get_base_directions(vector)
         return random.choice(moves)
+    
+
+    def move(self, new_pos: tuple[int, int]):
+        super().move(new_pos)
+        self.energy -= 0.1
 
 
     def reproduce(self, other: Animal) -> Prey:

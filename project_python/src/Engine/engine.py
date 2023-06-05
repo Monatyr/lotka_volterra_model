@@ -36,6 +36,7 @@ class Engine():
 
     with open('simulation_config.json') as file:
       self.config = json.load(file)
+      self.result_file.write(str(self.config) + '\n')
 
     self.show_images = self.config['simulation']['show_images']
     self.vision_range = self.config['simulation']['vision_range']
@@ -131,7 +132,7 @@ class Engine():
             self.paused = not self.paused
         if event.type == pygame.MOUSEBUTTONDOWN:
           mouse_pos = pygame.mouse.get_pos()
-          local_animals = list(map(lambda x: (x.behavior, x.energy, x.favorite_move), filter(lambda x: isinstance(x, Animal) and abs(mouse_pos[0] - x.pos[0]) <= 10 and abs(mouse_pos[1] - x.pos[1]) <= 10, list(self.all_objects))))
+          local_animals = list(map(lambda x: (x.behavior, x.energy, x.favorite_move, x.pos), filter(lambda x: isinstance(x, Animal) and abs(mouse_pos[0] - x.pos[0]) <= 10 and abs(mouse_pos[1] - x.pos[1]) <= 10, list(self.all_objects))))
           for el in local_animals:
             print(el)
           print(len(local_animals))
@@ -205,7 +206,7 @@ class Engine():
   def generate_grass(self, grass_num):
     grass_config = self.config["grass"]
     for _ in range(grass_num):
-      grass_x, grass_y = random.randint(0, self.screen_width-1), random.randint(0, self.screen_height-1)
+      grass_x, grass_y = random.randint(0, self.screen_width-10), random.randint(0, self.screen_height-10)
       self.all_objects.add(Grass((grass_x, grass_y), grass_config, self.grass_image))
 
 
