@@ -28,7 +28,7 @@ class Predator(Animal):
     
     def move(self, new_pos: tuple[int, int]):
         super().move(new_pos)
-        self.energy = self.energy - 0.1 if self.is_resting else self.energy - 0.2
+        self.energy = self.energy - self.config["resting_energy_drop"] if self.is_resting else self.energy - self.config["energy_drop"]
         self.is_resting = False
 
 

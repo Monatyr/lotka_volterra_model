@@ -1,3 +1,4 @@
+from functools import reduce
 import pygame
 import random
 import matplotlib
@@ -53,7 +54,10 @@ class Engine():
 
     self.running = True
     self.paused = False
-    self.counter = 0
+    self.grass_counter = 0
+    self.print_counter = 0
+    self.prey_data = []
+    self.predator_data = []
 
 
   def run(self):
@@ -77,20 +81,25 @@ class Engine():
 
       self.update_frontend()
 
-      self.counter += float(self.config["simulation"]["grass_per_round"])
+      self.grass_counter += float(self.config["simulation"]["grass_per_round"])
 
-      if int(self.counter) == 1:
+      if int(self.grass_counter) == 1:
         self.result_file.write(f"{self.objects_count['predator']}, {self.objects_count['prey']}\n")
         self.generate_grass(1)
-        self.counter = 0
+        self.grass_counter = 0
 
       self.run_animals_turn()
+
+      if self.print_counter % 500 == 0:
+        self.gather_animal_info()
+        self.print_counter = 0
 
       #if all animals are gone
       if not (self.objects_count['predator'] > 0 or self.objects_count['prey'] > 0) :
         self.paused = True
         continue
 
+      self.print_counter += 1
       self.object_interactions()
       self.clock.tick(240)
 
@@ -126,6 +135,7 @@ class Engine():
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
           if event.key == pygame.K_ESCAPE:
+            self.write_data_to_file()
             self.result_file.close()
             self.running = False
           if event.key == pygame.K_SPACE:
@@ -246,3 +256,44 @@ class Engine():
   def show_info(self):
     info_panel = self.info_panel.render(self.objects_count['prey'], self.objects_count['predator'])
     self.window.blit(info_panel, (self.screen_width, 0))
+
+
+  def gather_animal_info(self):
+    prey = list(filter(lambda x: isinstance(x, Prey), self.all_objects))
+    prey = list(map(lambda x: x.behavior, prey))
+    predators = list(filter(lambda x: isinstance(x, Predator), self.all_objects))
+    predators = list(map(lambda x: x.behavior, predators))
+
+    prey_avg_run, prey_avg_eat, prey_avg_reproduce = 0, 0, 0
+    predator_avg_hunt, predator_avg_rest, predator_avg_reproduce = 0, 0, 0
+    prey_num, predator_num = len(prey), len(predators)
+
+    for p in prey:
+      prey_avg_run += p['run']/prey_num
+      prey_avg_eat += p['eat']/prey_num
+      prey_avg_reproduce += p['reproduce']/prey_num
+
+    for p in predators:
+      predator_avg_hunt += p['hunt']/predator_num
+      predator_avg_rest += p['rest']/predator_num
+      predator_avg_reproduce += p['reproduce']/predator_num
+
+    self.prey_data.append([prey_avg_run, prey_avg_eat, prey_avg_reproduce])
+    self.predator_data.append([predator_avg_hunt, predator_avg_rest, predator_avg_reproduce])
+    print(f'Run: {prey_avg_run}, Eat: {prey_avg_eat}, Reproduce: {prey_avg_reproduce}')
+    print(f'Hunt: {predator_avg_hunt}, Rest: {predator_avg_rest}, Reproduce: {predator_avg_reproduce}\n')
+
+
+  def write_data_to_file(self):
+    for i in range(3):
+      for el in self.prey_data:
+        self.result_file.write(f'{el[i]},')
+      self.result_file.write(':')
+
+    self.result_file.write('\n')
+    
+    for i in range(3):
+      for el in self.predator_data:
+        self.result_file.write(f'{el[i]},')
+      self.result_file.write(':')
+          

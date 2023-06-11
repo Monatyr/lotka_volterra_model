@@ -57,7 +57,7 @@ class Prey(Animal):
 
     def move(self, new_pos: tuple[int, int]):
         super().move(new_pos)
-        self.energy -= 0.1
+        self.energy -= self.config["energy_drop"]
 
 
     def reproduce(self, other: Animal) -> Prey:
