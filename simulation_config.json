@@ -15,8 +15,10 @@
   "animal": {
     "predator": {
       "initial_energy": 300,
-      "reproduce_energy": 100,
-      "mutation_rate": 0.1,
+      "reproduce_energy": 200,
+      "mutation_rate": 0.8,
+      "energy_drop": 0.2,
+      "resting_energy_drop": 0.1,
       "image_path": "./assets/wolf.png",
       "image_width": 20,
       "image_ratio": 0.62,
@@ -24,8 +26,9 @@
     },
     "prey": {
       "initial_energy": 300,
-      "reproduce_energy": 100,
-      "mutation_rate": 0.1,
+      "reproduce_energy": 200,
+      "mutation_rate": 0.8,
+      "energy_drop": 0.1,
       "nutrition_value": 50,
       "image_path": "./assets/sheep.png",
       "image_width": 20,
