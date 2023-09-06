@@ -3,7 +3,7 @@ import pygame
 import random
 import matplotlib
 
-matplotlib.use('module://pygame_matplotlib.backend_pygame')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import json
 from scipy.spatial import KDTree
